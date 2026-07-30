@@ -1,4 +1,7 @@
-<!DOCTYPE html>
+from IPython.display import HTML
+
+# HTMLコンテンツを変数に格納
+html_content = r"""<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -167,7 +170,7 @@
         }
 
         .card-rarity { font-size: 1.1em; font-weight: bold; margin-bottom: 8px; color: #aaffa0; } /* Greenish tint for rarity */
-        .card-stats { margin-bottom: 12px; line-height: 1.4; } 
+        .card-stats { margin-bottom: 12px; line-height: 1.4; }
         .card-stats div {
             font-size: 0.95em;
             margin-bottom: 2px;
@@ -478,13 +481,22 @@
 
             rarity = Math.max(1, Math.min(999, rarity));
 
-            let baseStats = 10 + Math.floor(rarity / 50) * 2;
-            const rngAttack = rng(); rawRngValues.rngAttack = rngAttack;
-            const attack = baseStats + Math.floor(rngAttack * baseStats * 0.5);
-            const rngDefense = rng(); rawRngValues.rngDefense = rngDefense;
-            const defense = baseStats + Math.floor(rngDefense * baseStats * 0.4);
-            const rngHp = rng(); rawRngValues.rngHp = rngHp;
-            const hp = baseStats * 2 + Math.floor(rngHp * baseStats);
+            // Calculate stats based on rarity and add some randomness
+            // Attack: 1-50
+            const baseAttack = 1 + (rarity / 999) * 49; // Scale from 1 to 50
+            const attack = Math.max(1, Math.min(50, Math.floor(baseAttack + (rng() * 10 - 5)))); // Add random variation of +/- 5
+
+            // Defense: 1-10
+            const baseDefense = 1 + (rarity / 999) * 9; // Scale from 1 to 10
+            const defense = Math.max(1, Math.min(10, Math.floor(baseDefense + (rng() * 4 - 2)))); // Add random variation of +/- 2
+
+            // HP: 10-300
+            const baseHP = 10 + (rarity / 999) * 290; // Scale from 10 to 300
+            const hp = Math.max(10, Math.min(300, Math.floor(baseHP + (rng() * 40 - 20)))); // Add random variation of +/- 20
+
+            // Speed remains completely random
+            const rngSpeed = rng(); rawRngValues.rngSpeed = rngSpeed; // Keep this for raw RNG value tracking if needed
+            const speed = Math.floor(rngSpeed * 100) + 1; // 1-100
 
             const traitTypes = ['氷', '回復', '火', 'パワー倍増', '高速', 'キャプテン', '爆発'];
             const rngTraitChance = rng(); rawRngValues.rngTraitChance = rngTraitChance;
@@ -493,9 +505,6 @@
                 const rngTraitIndex = rng(); rawRngValues.rngTraitIndex = rngTraitIndex;
                 trait = traitTypes[Math.floor(rngTraitIndex * traitTypes.length)];
             }
-
-            const rngSpeed = rng(); rawRngValues.rngSpeed = rngSpeed;
-            const speed = Math.floor(rngSpeed * 100) + 1;
 
             let rarityClass;
             let effectClasses = '';
@@ -839,4 +848,7 @@
         packOpenText.style.opacity = '0';
     </script>
 </body>
-</html>
+</html>"""
+
+# HTMLコンテンツを表示
+HTML(html_content)
