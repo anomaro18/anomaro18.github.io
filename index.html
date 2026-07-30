@@ -1,3 +1,4 @@
+%%html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -62,6 +63,22 @@
             background-color: #c98c37;
         }
 
+        #clearEncyclopediaButton {
+            background-color: #dc3545; /* Red color for danger action */
+            margin-top: 30px;
+            margin-left: 10px;
+        }
+        #clearEncyclopediaButton:hover {
+            background-color: #c82333;
+        }
+
+        #changeNameButton {
+            background-color: #9b59b6; /* Purple color for change name */
+            margin-left: 10px;
+        }
+        #changeNameButton:hover {
+            background-color: #7d3c98;
+        }
 
         @keyframes pack-shake {
             0%, 100% { transform: translateX(0); }
@@ -151,13 +168,9 @@
         }
 
         .card-rarity { font-size: 1.1em; font-weight: bold; margin-bottom: 8px; color: #aaffa0; } /* Greenish tint for rarity */
-        .card-stats { margin-bottom: 12px; line-height: 1.4; }
+        .card-stats { margin-bottom: 12px; line-height: 1.4; } 
         .card-stats div {
             font-size: 0.95em;
-            margin-bottom: 2px;
-        }
-        .card-skill { font-style: italic; font-size: 0.9em; line-height: 1.3; color: #b2ccff; } /* Blueish tint for skill */
-        .card-skill div {
             margin-bottom: 2px;
         }
 
@@ -321,10 +334,21 @@
             100% { transform: scale(1.05) rotate(10deg); }
         }
 
+        #currentUserName {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #61afef;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+
     </style>
 </head>
 <body>
-    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #282c34; color: #abb2bf; padding: 20px; border-radius: 8px; max-width: 900px; margin: 20px auto; box-shadow: 0 0 20px rgba(0,0,0,0.5);">
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #282c34; color: #abb2bf; padding: 20px; border-radius: 8px; max-width: 900px; margin: 20px auto; box-shadow: 0 0 20px rgba(0,0,0,0.5); position: relative;">
+        <div id="currentUserName">プレイヤー1</div> <!-- Display current player name here -->
         <h1>カードコレクションゲーム</h1>
         <p>あなたの名前を入力して、カードパックを引いてみましょう！</p>
         <div style="margin-bottom: 20px;">
@@ -332,6 +356,7 @@
             <input type="text" id="playerName" value="プレイヤー1" style="padding: 8px; border-radius: 4px; border: 1px solid #61afef; background-color: #3e4451; color: #abb2bf; width: 200px;">
             <button id="drawPackButton">パックを引く</button>
             <button id="showEncyclopediaButton">図鑑</button>
+            <button id="changeNameButton">名前を変更</button>
         </div>
 
         <div class="game-container" style="display: flex; flex-direction: column; align-items: center;">
@@ -357,6 +382,7 @@
                     <!-- Rarity group containers will go here -->
                 </div>
                 <button id="backToPackButton">パックを引く画面に戻る</button>
+                <button id="clearEncyclopediaButton">図鑑を全てクリア</button>
             </div>
         </div>
     </div>
@@ -366,6 +392,10 @@
         const drawPackButton = document.getElementById('drawPackButton');
         const showEncyclopediaButton = document.getElementById('showEncyclopediaButton');
         const backToPackButton = document.getElementById('backToPackButton');
+        const clearEncyclopediaButton = document.getElementById('clearEncyclopediaButton'); // New button
+        const changeNameButton = document.getElementById('changeNameButton'); // New: Change Name button
+        const currentUserNameDisplay = document.getElementById('currentUserName'); // New: Element to display current name
+
         const cardPack = document.getElementById('cardPack');
         const packTop = cardPack.querySelector('.pack-top');
         const packBody = cardPack.querySelector('.pack-body');
@@ -391,9 +421,19 @@
             } else {
                 collectedCards = [];
             }
+
+            // Load player name from localStorage or set default
+            let savedPlayerName = localStorage.getItem('playerName');
+            if (savedPlayerName) {
+                playerNameInput.value = savedPlayerName;
+                currentUserNameDisplay.textContent = savedPlayerName;
+            } else {
+                playerNameInput.value = 'プレイヤー1';
+                currentUserNameDisplay.textContent = 'プレイヤー1';
+            }
         }
 
-        // Load cards on script initialization
+        // Load cards and player name on script initialization
         loadCards();
 
         // Seeded Random Number Generator for consistent results
@@ -417,14 +457,11 @@
         }
 
         function generateCardData(playerName, cardIndex, seed) {
-            const rng = mulberry32(seed); // A new RNG instance for each card
-            const rawRngValues = {}; // To store raw RNG values for debugging
+            const rng = mulberry32(seed);
+            const rawRngValues = {};
 
-            // --- Rarity generation (fixed RNG consumption, skewed towards lower rarities) ---
             let rarity;
 
-            // Always consume random numbers for all potential rarity paths to fix RNG sequence
-            // This ensures the number of rng() calls is consistent, making subsequent stats truly random for different seeds
             let val1 = rng(); rawRngValues.val1 = val1;
             let val2 = rng(); rawRngValues.val2 = val2;
             let val3 = rng(); rawRngValues.val3 = val3;
@@ -433,92 +470,80 @@
             let val6 = rng(); rawRngValues.val6 = val6;
             let val7 = rng(); rawRngValues.val7 = val7;
 
-            if (val1 < 0.6) { // 60% chance to skew towards lower rarities
-                let sumRng = (val2 + val3 + val4 + val5 + val6) / 5; // Average of 5 calls
-                // Adjusted range: make it broader to accommodate new rarity ranges and skew lower
-                rarity = Math.floor(sumRng * 400) + 100; // Scaled to be centered around 300 (range ~100-500)
-            } else { // 40% chance for wider, more uniform distribution (1-999)
+            if (val1 < 0.6) {
+                let sumRng = (val2 + val3 + val4 + val5 + val6) / 5;
+                rarity = Math.floor(sumRng * 400) + 100;
+            } else {
                 rarity = Math.floor(val7 * 999) + 1;
             }
 
-            rarity = Math.max(1, Math.min(999, rarity)); // Ensure within 1-999
+            rarity = Math.max(1, Math.min(999, rarity));
 
-            // --- Stats generation (consistent RNG calls) ---
-            let baseStats = 10 + Math.floor(rarity / 50) * 2; // Higher rarity, higher base
+            let baseStats = 10 + Math.floor(rarity / 50) * 2;
             const rngAttack = rng(); rawRngValues.rngAttack = rngAttack;
-            const attack = baseStats + Math.floor(rngAttack * baseStats * 0.5); // uses next rng value
+            const attack = baseStats + Math.floor(rngAttack * baseStats * 0.5);
             const rngDefense = rng(); rawRngValues.rngDefense = rngDefense;
-            const defense = baseStats + Math.floor(rngDefense * baseStats * 0.4); // uses next rng value
+            const defense = baseStats + Math.floor(rngDefense * baseStats * 0.4);
             const rngHp = rng(); rawRngValues.rngHp = rngHp;
-            const hp = baseStats * 2 + Math.floor(rngHp * baseStats); // uses next rng value
+            const hp = baseStats * 2 + Math.floor(rngHp * baseStats);
 
-            // --- Skill generation (consistent RNG calls) ---
-            const skillTypes = [
-                { name: "スラッシュ", effect: "物理攻撃", basePower: 20 },
-                { name: "ファイアボール", effect: "火属性攻撃", basePower: 30 },
-                { name: "ヒール", effect: "HP回復", basePower: 25 },
-                { name: "ポイズンアタック", effect: "毒付与", basePower: 15 },
-                { name: "シールド", effect: "防御力アップ", basePower: 20 },
-                { name: "ライトニング", effect: "雷属性攻撃", basePower: 35 },
-                { name: "ドレイン", effect: "HP吸収", basePower: 18 }
-            ];
+            const traitTypes = ['氷', '回復', '火', 'パワー倍増', '高速', 'キャプテン', '爆発'];
+            const rngTraitChance = rng(); rawRngValues.rngTraitChance = rngTraitChance;
+            let trait = null;
+            if (rngTraitChance < 0.15) {
+                const rngTraitIndex = rng(); rawRngValues.rngTraitIndex = rngTraitIndex;
+                trait = traitTypes[Math.floor(rngTraitIndex * traitTypes.length)];
+            }
 
-            const rngSkillIndex = rng(); rawRngValues.rngSkillIndex = rngSkillIndex;
-            let skillIndex = Math.floor(rngSkillIndex * skillTypes.length); // uses next rng value
-            const selectedSkill = skillTypes[skillIndex];
+            const rngSpeed = rng(); rawRngValues.rngSpeed = rngSpeed;
+            const speed = Math.floor(rngSpeed * 100) + 1;
 
-            let skillName = selectedSkill.name;
-            let skillEffect = selectedSkill.effect;
-            // Skill power also depends on rarity and a dedicated rng call for variability
-            const rngSkillPower = rng(); rawRngValues.rngSkillPower = rngSkillPower;
-            let skillPower = selectedSkill.basePower + Math.floor(rarity / 100) * 5 + Math.floor(rngSkillPower * 10); // uses next rng value
-
-
-            // Card color and effects based on rarity (updated logic for 50-point intervals)
             let rarityClass;
-            let effectClasses = ''; // New variable for effects
+            let effectClasses = '';
 
-            if (rarity <= 50) { rarityClass = 'rarity-1-50'; } // 劣悪
-            else if (rarity <= 100) { rarityClass = 'rarity-51-100'; } // 劣悪+
-            else if (rarity <= 150) { rarityClass = 'rarity-101-150'; } // 一般
-            else if (rarity <= 200) { rarityClass = 'rarity-151-200'; } // 並品
-            else if (rarity <= 250) { rarityClass = 'rarity-201-250'; } // 良品
-            else if (rarity <= 300) { rarityClass = 'rarity-251-300'; } // 優良
-            else if (rarity <= 350) { rarityClass = 'rarity-301-350'; } // 稀少
-            else if (rarity <= 400) { rarityClass = 'rarity-351-400'; } // 稀少+
-            else if (rarity <= 450) { rarityClass = 'rarity-401-450'; } // 聖級
-            else if (rarity <= 500) { rarityClass = 'rarity-451-500'; } // 聖級+
-            else if (rarity <= 550) { rarityClass = 'rarity-501-550'; } // 伝説
-            else if (rarity <= 600) { rarityClass = 'rarity-551-600'; } // 伝説+
-            else if (rarity <= 650) { rarityClass = 'rarity-601-650'; } // 神話
-            else if (rarity <= 700) { rarityClass = 'rarity-651-700'; } // 神話+
-            else if (rarity <= 750) { rarityClass = 'rarity-701-750'; } // 天界
-            else if (rarity <= 800) { rarityClass = 'rarity-751-800'; } // 天界+
-            else if (rarity <= 850) { rarityClass = 'rarity-801-850'; } // 究極
-            else if (rarity <= 900) { rarityClass = 'rarity-851-900'; } // 究極+
-            else if (rarity <= 950) { rarityClass = 'rarity-901-950'; } // 超越
-            else { rarityClass = 'rarity-951-999'; } // 至高
+            if (rarity <= 50) { rarityClass = 'rarity-1-50'; }
+            else if (rarity <= 100) { rarityClass = 'rarity-51-100'; }
+            else if (rarity <= 150) { rarityClass = 'rarity-101-150'; }
+            else if (rarity <= 200) { rarityClass = 'rarity-151-200'; }
+            else if (rarity <= 250) { rarityClass = 'rarity-201-250'; }
+            else if (rarity <= 300) { rarityClass = 'rarity-251-300'; }
+            else if (rarity <= 350) { rarityClass = 'rarity-301-350'; }
+            else if (rarity <= 400) { rarityClass = 'rarity-351-400'; }
+            else if (rarity <= 450) { rarityClass = 'rarity-401-450'; }
+            else if (rarity <= 500) { rarityClass = 'rarity-451-500'; }
+            else if (rarity <= 550) { rarityClass = 'rarity-501-550'; }
+            else if (rarity <= 600) { rarityClass = 'rarity-551-600'; }
+            else if (rarity <= 650) { rarityClass = 'rarity-601-650'; }
+            else if (rarity <= 700) { rarityClass = 'rarity-651-700'; }
+            else if (rarity <= 750) { rarityClass = 'rarity-701-750'; }
+            else if (rarity <= 800) { rarityClass = 'rarity-751-800'; }
+            else if (rarity <= 850) { rarityClass = 'rarity-801-850'; }
+            else if (rarity <= 900) { rarityClass = 'rarity-851-900'; }
+            else if (rarity <= 950) { rarityClass = 'rarity-901-950'; }
+            else { rarityClass = 'rarity-951-999'; }
 
             if (rarity >= 300) { effectClasses = 'has-shine'; }
-            if (rarity >= 851) { effectClasses += ' has-holographic'; } // Holographic only for 851+ (Celestial and above)
+            if (rarity >= 851) { effectClasses += ' has-holographic'; }
 
             const cardIdentifier = JSON.stringify({
                 playerName: playerName,
                 rarity: rarity,
                 stats: { attack, defense, hp },
-                skill: { name: skillName, power: skillPower, effect: skillEffect }
+                trait: trait,
+                speed: speed
             });
 
             return {
-                id: stringToSeed(cardIdentifier), // Use a derived ID for uniqueness
+                id: stringToSeed(cardIdentifier),
                 playerName: playerName,
                 rarity: rarity,
                 rarityClass: rarityClass,
-                effectClasses: effectClasses, // Pass effect classes
+                effectClasses: effectClasses,
                 stats: { attack, defense, hp },
-                skill: { name: skillName, power: skillPower, effect: skillEffect },
-                rawRngValues: rawRngValues, // Add raw RNG values for debugging
-                isNew: true // Set isNew flag to true for newly generated cards
+                trait: trait,
+                speed: speed,
+                rawRngValues: rawRngValues,
+                isNew: true
             };
         }
 
@@ -534,6 +559,8 @@
                 newMarkHtml = '<div class="new-mark">NEW</div>';
             }
 
+            const traitHtml = cardData.trait ? `<div>特性: ${cardData.trait}</div>` : '';
+
             cardDiv.innerHTML = `
                 ${newMarkHtml}
                 <div class="card-header-frame">
@@ -545,12 +572,9 @@
                         <div>攻撃: ${cardData.stats.attack}</div>
                         <div>防御: ${cardData.stats.defense}</div>
                         <div>HP: ${cardData.stats.hp}</div>
+                        <div>素早さ: ${cardData.speed}</div>
                     </div>
-                    <div class="card-skill">
-                        <div>技: ${cardData.skill.name}</div>
-                        <div>威力: ${cardData.skill.power}</div>
-                        <div>効果: ${cardData.skill.effect}</div>
-                    </div>
+                    ${traitHtml}
                 </div>
             `;
             return cardDiv;
@@ -785,6 +809,29 @@
             packCardDisplayWrapper.style.display = 'flex';
             // Ensure the pack area is visible when returning to pack view
             cardPack.style.display = 'block';
+        });
+
+        clearEncyclopediaButton.addEventListener('click', () => {
+            console.log('Clear Encyclopedia button clicked!');
+            if (confirm('本当に図鑑のカードを全てクリアしますか？この操作は元に戻せません。')) {
+                localStorage.removeItem('collectedCards');
+                collectedCards = [];
+                renderEncyclopedia();
+                alert('図鑑のカードが全てクリアされました。');
+            }
+        });
+
+        changeNameButton.addEventListener('click', () => {
+            console.log('Change Name button clicked!');
+            const newName = prompt('新しい名前を入力してください:');
+            if (newName !== null && newName.trim() !== '') {
+                localStorage.setItem('playerName', newName.trim());
+                playerNameInput.value = newName.trim();
+                currentUserNameDisplay.textContent = newName.trim();
+                alert(`名前を「${newName.trim()}」に変更しました。`);
+            } else if (newName !== null) {
+                alert('名前は空にできません。');
+            }
         });
 
         // Initial pack state on load
