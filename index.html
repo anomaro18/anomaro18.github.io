@@ -1,13 +1,9 @@
-from IPython.display import HTML
-
-HTML('''
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>カードコレクションゲーム</title>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
     <style>
         /* Global styles for the container */
         body {
@@ -56,14 +52,6 @@ HTML('''
         }
         #showEncyclopediaButton:hover {
             background-color: #218838;
-        }
-
-        #toggleDeckSelectionButton {
-            background-color: #f39c12; /* Orange color for deck */
-            margin-left: 10px;
-        }
-        #toggleDeckSelectionButton:hover {
-            background-color: #e67e22;
         }
 
         #backToPackButton {
@@ -313,7 +301,7 @@ HTML('''
             );
             background-size: 200% 200%;
             animation: holographic-animation 5s linear infinite;
-            opacity: 0.8;
+            opacity: 0.8; /* Make it subtle */
             pointer-events: none;
             z-index: 3; /* Above shine and content */
         }
@@ -355,68 +343,6 @@ HTML('''
             text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
         }
 
-        /* Style for cards within the deck display area */
-        .card-in-deck {
-            width: 100px; /* Smaller width */
-            height: 155px; /* Adjusted height for better aspect ratio */
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around; /* Distribute content nicely */
-            align-items: center;
-            padding: 5px;
-            box-sizing: border-box;
-            text-align: center;
-            font-size: 0.7em; /* Smaller font */
-            color: white;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            cursor: grab; /* Indicate it's draggable */
-        }
-        .card-in-deck:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        }
-        .card-in-deck .card-name {
-            font-size: 0.9em; /* Adjust name size */
-            margin-bottom: 2px;
-            white-space: nowrap; /* Prevent name from wrapping */
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .card-in-deck .card-rarity {
-            font-size: 0.7em; /* Smaller font for rarity in deck */
-            font-weight: normal;
-            margin-bottom: 2px;
-            color: #ccc; /* Slightly dimmed */
-        }
-        .card-in-deck .card-stats {
-            margin-bottom: 5px; /* Reduced margin for stats in deck */
-            line-height: 1.2;
-        }
-        .card-in-deck .card-stats div {
-            font-size: 0.6em; /* Even smaller font for individual stats */
-            margin-bottom: 1px;
-        }
-        .card-in-deck .card-trait {
-            font-size: 0.7em;
-            font-weight: normal;
-            margin-top: 2px;
-            color: #aaffa0;
-        }
-        .card-in-deck .new-mark {
-            display: none; /* No 'NEW' mark in deck view */
-        }
-
-        /* SortableJS ghost class */
-        .sortable-ghost {
-            opacity: 0.4;
-            background-color: #61afef;
-            border: 2px dashed #ffffff;
-        }
-
     </style>
 </head>
 <body>
@@ -447,18 +373,6 @@ HTML('''
             </div>
 
             <div id="encyclopediaArea" class="encyclopedia-area" style="display: none; width: 100%; max-height: 700px; overflow-y: auto; padding: 20px; border-radius: 8px; background-color: #3e4451; box-shadow: inset 0 0 10px rgba(0,0,0,0.3);">
-                <!-- New Deck Button inside encyclopediaArea -->
-                <div style="text-align: right; margin-bottom: 15px;">
-                    <button id="toggleDeckSelectionButton" style="background-color: #f39c12;">デッキを編集</button>
-                </div>
-
-                <div id="deckSelectionArea" style="display: none; background-color: #34495e; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                    <h3 style="color: #f39c12; margin-bottom: 10px;">デッキ (5枚選択)</h3>
-                    <div id="deckDisplayArea" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; min-height: 120px; border: 2px dashed #f39c12; border-radius: 5px; padding: 10px;">
-                        <!-- Selected deck cards will be displayed here -->
-                    </div>
-                    <p style="font-size: 0.9em; color: #ccc; margin-top: 10px;">カードをダブルクリックしてデッキに追加・削除します。</p>
-                </div>
                 <h2 style="color: #61afef; margin-bottom: 20px;">カード図鑑</h2>
                 <div class="rarity-tabs" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px;">
                     <!-- Rarity tab buttons will go here -->
@@ -477,9 +391,9 @@ HTML('''
         const drawPackButton = document.getElementById('drawPackButton');
         const showEncyclopediaButton = document.getElementById('showEncyclopediaButton');
         const backToPackButton = document.getElementById('backToPackButton');
-        const clearEncyclopediaButton = document.getElementById('clearEncyclopediaButton');
-        const changeNameButton = document.getElementById('changeNameButton');
-        const currentUserNameDisplay = document.getElementById('currentUserName');
+        const clearEncyclopediaButton = document.getElementById('clearEncyclopediaButton'); // New button
+        const changeNameButton = document.getElementById('changeNameButton'); // New: Change Name button
+        const currentUserNameDisplay = document.getElementById('currentUserName'); // New: Element to display current name
 
         const cardPack = document.getElementById('cardPack');
         const packTop = cardPack.querySelector('.pack-top');
@@ -487,59 +401,24 @@ HTML('''
         const packOpenText = document.getElementById('packOpenText');
         const cardDisplayArea = document.getElementById('cardDisplayArea');
         const encyclopediaArea = document.getElementById('encyclopediaArea');
-        const deckSelectionArea = document.getElementById('deckSelectionArea');
-        const deckDisplayArea = document.getElementById('deckDisplayArea');
-        const encyclopediaContent = document.getElementById('encyclopediaContent');
-        const rarityTabsContainer = document.querySelector('.rarity-tabs');
+        const encyclopediaContent = document.getElementById('encyclopediaContent'); // New: Container for rarity groups
+        const rarityTabsContainer = document.querySelector('.rarity-tabs'); // New: Container for tab buttons
         const packCardDisplayWrapper = document.querySelector('.pack-card-display-wrapper');
 
-        const toggleDeckSelectionButton = document.getElementById('toggleDeckSelectionButton');
+        let collectedCards = []; // Array to store all generated cards
 
-        let collectedCards = [];
-        let selectedDeck = [];
-
-        // Initialize Sortable for the deckDisplayArea
-        let sortableDeck = null; // Declare it globally or in a scope accessible by initSortable
-
-        function initSortable() {
-            if (sortableDeck) {
-                sortableDeck.destroy(); // Destroy previous instance if it exists
-            }
-            sortableDeck = new Sortable(deckDisplayArea, {
-                animation: 150,
-                ghostClass: 'sortable-ghost',
-                onEnd: function (evt) {
-                    // Update the selectedDeck array based on the new order
-                    const [removed] = selectedDeck.splice(evt.oldIndex, 1);
-                    selectedDeck.splice(evt.newIndex, 0, removed);
-                    saveCards(); // Save the new order to localStorage
-                    // No need to call renderDeckDisplay here, SortableJS handles DOM movement
-                }
-            });
-        }
-
-        // Function to save collected cards and deck to localStorage
+        // Function to save collected cards to localStorage
         function saveCards() {
             localStorage.setItem('collectedCards', JSON.stringify(collectedCards));
-            localStorage.setItem('selectedDeck', JSON.stringify(selectedDeck));
         }
 
-        // Function to load collected cards and deck from localStorage
+        // Function to load collected cards from localStorage
         function loadCards() {
             const savedCards = localStorage.getItem('collectedCards');
             if (savedCards) {
                 collectedCards = JSON.parse(savedCards);
-            }
-            else {
+            } else {
                 collectedCards = [];
-            }
-
-            const savedDeck = localStorage.getItem('selectedDeck');
-            if (savedDeck) {
-                selectedDeck = JSON.parse(savedDeck);
-            }
-            else {
-                selectedDeck = [];
             }
 
             // Load player name from localStorage or set default
@@ -547,8 +426,7 @@ HTML('''
             if (savedPlayerName) {
                 playerNameInput.value = savedPlayerName;
                 currentUserNameDisplay.textContent = savedPlayerName;
-            }
-            else {
+            } else {
                 playerNameInput.value = 'プレイヤー1';
                 currentUserNameDisplay.textContent = 'プレイヤー1';
             }
@@ -655,8 +533,9 @@ HTML('''
             const cardIdentifier = JSON.stringify({
                 playerName: playerName,
                 rarity: rarity,
-                stats: { attack, defense, hp, speed },
-                trait: trait
+                stats: { attack, defense, hp },
+                trait: trait,
+                speed: speed
             });
 
             return {
@@ -665,39 +544,27 @@ HTML('''
                 rarity: rarity,
                 rarityClass: rarityClass,
                 effectClasses: effectClasses,
-                stats: { attack, defense, hp, speed },
+                stats: { attack, defense, hp },
                 trait: trait,
+                speed: speed,
                 rawRngValues: rawRngValues,
                 isNew: true
             };
         }
 
-        function createCardElement(cardData, delay, isDeckCard = false) {
+        function createCardElement(cardData, delay) {
             const cardDiv = document.createElement('div');
             cardDiv.className = `card ${cardData.rarityClass} ${cardData.effectClasses}`;
-            if (isDeckCard) {
-                cardDiv.classList.add('card-in-deck');
-                cardDiv.dataset.cardId = cardData.id; // Add data attribute for SortableJS
-            } else if (delay !== undefined) {
+            if (delay !== undefined) {
                 cardDiv.style.animationDelay = `${delay}s`;
             }
 
             let newMarkHtml = '';
-            if (cardData.isNew && !isDeckCard) {
+            if (cardData.isNew) {
                 newMarkHtml = '<div class="new-mark">NEW</div>';
             }
 
-            // Always include rarity for deck cards in a simplified format
-            const rarityHtml = isDeckCard ? `<div class="card-rarity">R:${cardData.rarity}</div>` : `<div class="card-rarity">レアリティ: ${cardData.rarity}</div>`;
-            // Always include trait if it exists
-            const traitHtml = cardData.trait ? `<div class="card-trait">${cardData.trait}</div>` : '';
-            // Always include stats
-            const statsHtml = `<div class="card-stats">
-                                <div>攻撃: ${cardData.stats.attack}</div>
-                                <div>防御: ${cardData.stats.defense}</div>
-                                <div>HP: ${cardData.stats.hp}</div>
-                                <div>素早さ: ${cardData.stats.speed}</div>
-                            </div>`;
+            const traitHtml = cardData.trait ? `<div>特性: ${cardData.trait}</div>` : '';
 
             cardDiv.innerHTML = `
                 ${newMarkHtml}
@@ -705,17 +572,16 @@ HTML('''
                     <div class="card-name">${cardData.playerName}</div>
                 </div>
                 <div class="card-content">
-                    ${rarityHtml}
-                    ${statsHtml}
+                    <div class="card-rarity">レアリティ: ${cardData.rarity}</div>
+                    <div class="card-stats">
+                        <div>攻撃: ${cardData.stats.attack}</div>
+                        <div>防御: ${cardData.stats.defense}</div>
+                        <div>HP: ${cardData.stats.hp}</div>
+                        <div>素早さ: ${cardData.speed}</div>
+                    </div>
                     ${traitHtml}
                 </div>
             `;
-
-            // Attach double-click listener based on context
-            cardDiv.addEventListener('dblclick', () => {
-                handleCardDoubleClick(cardData, isDeckCard);
-            });
-
             return cardDiv;
         }
 
@@ -741,46 +607,6 @@ HTML('''
             else if (rarity <= 900) return 'アルティメット+ (851-900)';
             else if (rarity <= 950) return 'トランセンデント (901-950)';
             else return 'スプリーム (951-999)';
-        }
-
-        function handleCardDoubleClick(cardData, isDeckCard) {
-            if (isDeckCard) {
-                // Card in deck was double-clicked, remove it
-                selectedDeck = selectedDeck.filter(card => card.id !== cardData.id);
-                alert(`${cardData.playerName} (レアリティ: ${cardData.rarity}) がデッキから削除されました。`);
-            } else {
-                // Card in encyclopedia was double-clicked, add to deck
-                if (selectedDeck.length < 5) {
-                    // Check if card is already in deck
-                    if (!selectedDeck.some(card => card.id === cardData.id)) {
-                        selectedDeck.push(cardData);
-                        alert(`${cardData.playerName} (レアリティ: ${cardData.rarity}) がデッキに追加されました。`);
-                    } else {
-                        alert('このカードはすでにデッキにあります！');
-                    }
-                } else {
-                    alert('デッキはすでに5枚のカードでいっぱいです。カードを削除してから追加してください。');
-                }
-            }
-            saveCards();
-            renderDeckDisplay(); // Re-render deck display after change
-        }
-
-        function renderDeckDisplay() {
-            deckDisplayArea.innerHTML = ''; // Clear current deck display
-            if (selectedDeck.length === 0) {
-                const placeholder = document.createElement('p');
-                placeholder.style.color = '#aaa';
-                placeholder.textContent = 'デッキにカードがありません。図鑑からカードをダブルクリックして追加してください。';
-                deckDisplayArea.appendChild(placeholder);
-            } else {
-                selectedDeck.forEach(cardData => {
-                    // Create a simplified card element for the deck view
-                    const deckCardElement = createCardElement(cardData, undefined, true); // isDeckCard = true
-                    deckDisplayArea.appendChild(deckCardElement);
-                });
-            }
-            initSortable(); // Initialize SortableJS every time the deck is rendered
         }
 
         function renderEncyclopedia() {
@@ -809,10 +635,11 @@ HTML('''
             }
 
             // Step 1: Sort all collected cards by rarity in descending order.
+            // This ensures that when cards are grouped, they are already sorted within each group.
             const sortedCards = [...collectedCards].sort((a, b) => b.rarity - a.rarity);
 
             const cardsByRarityGroup = {};
-            const rarityGroupOrder = [];
+            const rarityGroupOrder = []; // To maintain a consistent order of tabs
 
             for (const cardData of sortedCards) {
                 const groupName = getRarityGroupName(cardData.rarity);
@@ -820,12 +647,14 @@ HTML('''
                     cardsByRarityGroup[groupName] = [];
                     rarityGroupOrder.push(groupName);
                 }
-                cardsByRarityGroup[groupName].push(cardData);
+                cardsByRarityGroup[groupName].push(cardData); // Cards are pushed in already sorted order
             }
 
             // Step 2: Sort rarity group names (tabs) by their minimum rarity value in descending order.
+            // This ensures tabs are displayed from highest rarity range (e.g., Transcendent) to lowest (e.g., Common).
             rarityGroupOrder.sort((a, b) => {
-                const getMinRarity = (name) => parseInt(name.match(/\\((\\d+)-/)[1]);
+                // Custom sort order based on rarity ranges (descending)
+                const getMinRarity = (name) => parseInt(name.match(/\((\d+)-/)[1]);
                 return getMinRarity(b) - getMinRarity(a);
             });
 
@@ -836,13 +665,13 @@ HTML('''
                 const tabButton = document.createElement('button');
                 tabButton.textContent = groupName;
                 tabButton.className = 'rarity-tab-button';
-                tabButton.dataset.group = groupName;
+                tabButton.dataset.group = groupName; // Store group name for easy access
                 rarityTabsContainer.appendChild(tabButton);
                 if (!firstTabButton) { firstTabButton = tabButton; }
 
                 // Create content container for this rarity group
                 const groupContainer = document.createElement('div');
-                groupContainer.id = `rarity-group-${groupName.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                groupContainer.id = `rarity-group-${groupName.replace(/[^a-zA-Z0-9]/g, '-')}`; // Sanitize ID
                 groupContainer.className = 'rarity-group-container';
 
                 // Add a header inside the tab content for clarity
@@ -884,10 +713,14 @@ HTML('''
 
         drawPackButton.addEventListener('click', () => {
             console.log('Draw Pack button clicked!');
+            // Hide encyclopedia if it's currently visible
             packCardDisplayWrapper.style.display = 'flex';
             encyclopediaArea.style.display = 'none';
-            deckSelectionArea.style.display = 'none';
-            toggleDeckSelectionButton.textContent = 'デッキを編集';
+
+            // --- DEBUG LOGS START ---
+            console.log('--- Draw Pack Clicked ---');
+            console.log('Input Field Value:', playerNameInput.value); // Log raw input field value
+            // --- DEBUG LOGS END ---
 
             const playerName = playerNameInput.value.trim();
             if (!playerName) {
@@ -895,89 +728,91 @@ HTML('''
                 return;
             }
 
+            // --- DEBUG LOGS START ---
+            console.log('Input Player Name:', playerName);
             const baseSeed = stringToSeed(playerName);
+            console.log('Generated Base Seed:', baseSeed);
+            // --- DEBUG LOGS END ---
 
-            cardDisplayArea.innerHTML = '';
+            cardDisplayArea.innerHTML = ''; // Clear previous cards
             packBody.style.opacity = '1';
             packTop.style.transform = 'rotateX(0deg)';
             packTop.style.opacity = '1';
-            packTop.style.display = 'block';
-            cardPack.style.display = 'block';
-            packOpenText.style.opacity = '0';
+            packTop.style.display = 'block'; // Ensure pack top is visible
+            cardPack.style.display = 'block'; // Show pack if hidden
+            packOpenText.style.opacity = '0'; // Hide text initially
 
             // Reset animations
             packTop.style.animation = 'none';
             packOpenText.style.animation = 'none';
-            cardPack.style.animation = 'none';
-            void packTop.offsetWidth;
-            void packOpenText.offsetWidth;
-            void cardPack.offsetWidth;
+            cardPack.style.animation = 'none'; // Reset shake animation
+            void packTop.offsetWidth; // Trigger reflow
+            void packOpenText.offsetWidth; // Trigger reflow
+            void cardPack.offsetWidth; // Trigger reflow
 
             // Shake animation
             cardPack.style.animation = 'pack-shake 0.3s ease-in-out';
 
             setTimeout(() => {
-                cardPack.style.animation = 'none';
+                cardPack.style.animation = 'none'; // Remove shake animation after it plays
+                // Pack opening animation
                 packTop.style.animation = 'pack-open-top-animation 0.8s forwards';
                 packOpenText.style.animation = 'pack-open-text-fade-in-out 1.5s forwards';
-            }, 300);
+            }, 300); // After shake animation finishes
 
             setTimeout(() => {
+                // After pack top animation
                 packTop.style.display = 'none';
-                packBody.style.opacity = '0';
-                cardPack.style.display = 'none';
+                packBody.style.opacity = '0'; // Hide pack body
+                cardPack.style.display = 'none'; // Hide the entire card pack element
             }, 1200);
 
             setTimeout(() => {
-                const numCards = 1;
+                const numCards = 1; // Draw only 1 card per pack
 
                 for (let i = 0; i < numCards; i++) {
                     const cardSeed = baseSeed + i;
-                    let generatedCardData = generateCardData(playerName, i, cardSeed);
+                    let generatedCardData = generateCardData(playerName, i, cardSeed); // This card, fresh from the pack, has isNew: true
 
+                    // Check if this card (identified by its unique ID) already exists in the collectedCards
                     const existingCardInCollection = collectedCards.find(c => c.id === generatedCardData.id);
 
                     if (!existingCardInCollection) {
-                        collectedCards.push(generatedCardData);
+                        // Card is truly new to the collection
+                        collectedCards.push(generatedCardData); // Add with isNew: true (from generateCardData)
+                        // The generatedCardData for display will also correctly have isNew: true
                     } else {
-                        generatedCardData.isNew = false;
+                        // Card is a duplicate.
+                        // For display purposes, the *drawn* duplicate card should NOT show 'NEW'.
+                        generatedCardData.isNew = false; // Set isNew to false for this *displayed* card only
+                        // The existing card in collectedCards keeps its current isNew status. We don't modify it here.
                     }
-                    saveCards();
+                    saveCards(); // Save cards after adding/updating collectedCards
 
-                    const cardElement = createCardElement(generatedCardData, i * 0.2, false);
+                    // --- DEBUG LOGS START ---
+                    console.log('Generated Card Data (for display):', JSON.stringify(generatedCardData, null, 2)); // Detailed log
+                    // --- DEBUG LOGS END ---
+
+                    // The cardElement is created using `generatedCardData`, which now correctly reflects
+                    // whether the *drawn card* should show 'NEW' (true for new unique card, false for duplicate).
+                    const cardElement = createCardElement(generatedCardData, i * 0.2);
                     cardDisplayArea.appendChild(cardElement);
                 }
-            }, 1500);
+            }, 1500); // Start displaying cards after pack animation
         });
 
         showEncyclopediaButton.addEventListener('click', () => {
             console.log('Show Encyclopedia button clicked!');
             packCardDisplayWrapper.style.display = 'none';
             encyclopediaArea.style.display = 'block';
-            deckSelectionArea.style.display = 'none';
-            toggleDeckSelectionButton.textContent = 'デッキを編集';
             renderEncyclopedia();
-        });
-
-        toggleDeckSelectionButton.addEventListener('click', () => {
-            console.log('Toggle Deck Selection button clicked!');
-            const isDeckAreaVisible = deckSelectionArea.style.display === 'block';
-            if (isDeckAreaVisible) {
-                deckSelectionArea.style.display = 'none';
-                toggleDeckSelectionButton.textContent = 'デッキを編集';
-            } else {
-                deckSelectionArea.style.display = 'block';
-                toggleDeckSelectionButton.textContent = 'デッキを隠す';
-                renderDeckDisplay(); // Ensure deck display is up-to-date and sortable
-            }
         });
 
         backToPackButton.addEventListener('click', () => {
             console.log('Back to Pack button clicked!');
             encyclopediaArea.style.display = 'none';
             packCardDisplayWrapper.style.display = 'flex';
-            deckSelectionArea.style.display = 'none';
-            toggleDeckSelectionButton.textContent = 'デッキを編集';
+            // Ensure the pack area is visible when returning to pack view
             cardPack.style.display = 'block';
         });
 
@@ -985,12 +820,9 @@ HTML('''
             console.log('Clear Encyclopedia button clicked!');
             if (confirm('本当に図鑑のカードを全てクリアしますか？この操作は元に戻せません。')) {
                 localStorage.removeItem('collectedCards');
-                localStorage.removeItem('selectedDeck');
                 collectedCards = [];
-                selectedDeck = [];
                 renderEncyclopedia();
-                renderDeckDisplay();
-                alert('図鑑のカードとデッキが全てクリアされました。');
+                alert('図鑑のカードが全てクリアされました。');
             }
         });
 
@@ -1002,8 +834,7 @@ HTML('''
                 playerNameInput.value = newName.trim();
                 currentUserNameDisplay.textContent = newName.trim();
                 alert(`名前を「${newName.trim()}」に変更しました。`);
-            }
-            else if (newName !== null) {
+            } else if (newName !== null) {
                 alert('名前は空にできません。');
             }
         });
@@ -1012,10 +843,6 @@ HTML('''
         packTop.style.animation = 'none';
         packOpenText.style.animation = 'none';
         packOpenText.style.opacity = '0';
-
-        // Render initial deck display when the page loads, in case deck is loaded from localStorage
-        renderDeckDisplay();
     </script>
 </body>
-</html>'''
-)
+</html>"""
